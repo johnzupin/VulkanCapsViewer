@@ -1,0 +1,5 @@
+vulkancapsviewer (1.0+0-rc1) unstable; urgency=medium
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- john <johnz@lunarg.com>  Fri, 20 May 2022 16:06:01 -0600

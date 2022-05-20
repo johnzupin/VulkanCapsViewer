@@ -1,0 +1,18 @@
+Source: vulkancapsviewer
+Section: unknown
+Priority: optional
+Maintainer: John Zupin <johnz@lunarg.com>
+Build-Depends: debhelper-compat (= 10),
+ qt5-default
+Standards-Version: 4.4.1
+Homepage: https://github.com/SaschaWillems/VulkanCapsViewer
+Vcs-Browser: https://github.com/SaschaWillems/VulkanCapsViewer
+Vcs-Git: https://github.com/SaschaWillems/VulkanCapsViewer
+
+Package: vulkancapsviewer
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ qt5-default
+Description: Client application to display
+ hardware implementation details for GPUs
+ supporting the Vulkan API by Khronos.
