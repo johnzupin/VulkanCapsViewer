@@ -1,3 +1,10 @@
+vulkancapsviewer (3.21+13~rc1-1lunarg20.04-1) focal; urgency=medium
+
+  [ John Zupin ]
+  * packaging: update debian/copyright
+
+ -- john <john@odin>  Tue, 18 Oct 2022 14:59:59 -0600
+
 vulkancapsviewer (1.0+0-rc1) unstable; urgency=medium
 
   * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
