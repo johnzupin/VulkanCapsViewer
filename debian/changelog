@@ -1,3 +1,11 @@
+vulkancapsviewer (3.21+13~rc1-1lunarg22.04-1) jammy; urgency=medium
+
+  [ John Zupin ]
+  * packaging: update build and run deps for ubuntu
+  * packaging: update debian/copyright
+
+ -- john <john@odin>  Tue, 18 Oct 2022 15:01:35 -0600
+
 vulkancapsviewer (1.0+0-rc1) unstable; urgency=medium
 
   * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
