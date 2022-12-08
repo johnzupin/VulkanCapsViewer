@@ -60,6 +60,10 @@
 #include <QX11Info>
 #endif
 
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#include <wayland-client.h>
+#endif
+
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include <QtAndroid>
 #include <QAndroidJniEnvironment>
@@ -73,7 +77,7 @@ extern "C" const char *getWorkingFolderForiOS(void);
 
 using std::to_string;
 
-const QString VulkanCapsViewer::version = "3.26";
+const QString VulkanCapsViewer::version = "3.27";
 const QString VulkanCapsViewer::reportVersion = "3.2";
 
 OSInfo getOperatingSystem()
