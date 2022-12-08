@@ -1,3 +1,25 @@
+vulkancapsviewer (3.27+2~rc1-1lunarg22.04-1) jammy; urgency=medium
+
+  [ Sascha Willems ]
+  * Removed wrong license file
+  * Added LGPLv3 license file
+  * Delete FUNDING.yml
+  * Updated to Vulkan Headers 1.3.235
+  * Version bump
+  * Type castings
+  * Type castings
+
+  [ Richard S. Wright Jr ]
+  * A cmake support (#156)
+
+  [ Simon Ser ]
+  * Fix Wayland build (#155)
+
+  [ John Zupin ]
+  * packaging: init patches
+
+ -- john <john@odin>  Thu, 08 Dec 2022 14:22:32 -0700
+
 vulkancapsviewer (3.21+13~rc1-1lunarg22.04-1) jammy; urgency=medium
 
   [ John Zupin ]
