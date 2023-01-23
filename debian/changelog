@@ -1,3 +1,23 @@
+vulkancapsviewer (3.27+14~rc1-1lunarg22.04-1) jammy; urgency=medium
+
+  [ Sascha Willems ]
+  * Tooling update
+  * Code rework and cleanup for better re-usability
+  * Code rework and cleanup for better re-usability
+  * Removed unused JSON export node
+  * Fixed typecast
+  * Reference instance from context
+  * Reference instance from context
+  * Updated to Vulkan headers 1.3.237
+  * Use profiles library from SDK 1.3.236.0
+  * Code cleanup
+  * Fix LUID display and storage
+
+  [ John Zupin ]
+  * packaging: debian: update copyright
+
+ -- john <john@odin>  Mon, 23 Jan 2023 14:34:28 -0700
+
 vulkancapsviewer (3.27+2~rc1-1lunarg22.04-1) jammy; urgency=medium
 
   [ Sascha Willems ]
