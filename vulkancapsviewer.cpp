@@ -297,8 +297,11 @@ VulkanCapsViewer::~VulkanCapsViewer()
             vkDestroyDevice(gpu.dev, nullptr);
         }
     }
-    if (instance != VK_NULL_HANDLE) {
-        vkDestroyInstance(instance, nullptr);
+    if (vulkanContext.surface != VK_NULL_HANDLE) {
+        vkDestroySurfaceKHR(vulkanContext.instance, vulkanContext.surface, nullptr);
+    }
+    if (vulkanContext.instance != VK_NULL_HANDLE) {
+        vkDestroyInstance(vulkanContext.instance, nullptr);
     }
 }
 
@@ -664,7 +667,7 @@ bool VulkanCapsViewer::initVulkan()
     instanceCreateInfo.enabledExtensionCount = (uint32_t)enabledExtensions.size();
 
     // Create vulkan Instance
-    vkRes = vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
+    vkRes = vkCreateInstance(&instanceCreateInfo, nullptr, &vulkanContext.instance);
     if (vkRes != VK_SUCCESS)
     {
         QString error;
@@ -681,30 +684,28 @@ bool VulkanCapsViewer::initVulkan()
     }
 
 #ifdef ANDROID
-    loadVulkanFunctions(instance);
+    loadVulkanFunctions();
 #endif
 
     // Function pointers for new features/properties
     if (deviceProperties2Available) {
-        pfnGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2KHR"));
-        if (!pfnGetPhysicalDeviceFeatures2KHR) {
+        vulkanContext.vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(vkGetInstanceProcAddr(vulkanContext.instance, "vkGetPhysicalDeviceFeatures2KHR"));
+        if (!vulkanContext.vkGetPhysicalDeviceFeatures2KHR) {
             deviceProperties2Available = false;
             QMessageBox::warning(this, tr("Error"), "Could not get function pointer for vkGetPhysicalDeviceFeatures2KHR (even though extension is enabled!)\nNew features and properties won't be displayed!");
         }
-        pfnGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR"));
-        if (!pfnGetPhysicalDeviceProperties2KHR) {
+        vulkanContext.vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(vkGetInstanceProcAddr(vulkanContext.instance, "vkGetPhysicalDeviceProperties2KHR"));
+        if (!vulkanContext.vkGetPhysicalDeviceProperties2KHR) {
             deviceProperties2Available = false;
             QMessageBox::warning(this, tr("Error"), "Could not get function pointer for vkGetPhysicalDeviceProperties2KHR (even though extension is enabled!)\nNew features and properties won't be displayed!");
         }
     }
 
-    pfnGetPhysicalDeviceSurfaceSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceSupportKHR>(vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceSupportKHR"));
+    vulkanContext.vkGetPhysicalDeviceSurfaceSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceSupportKHR>(vkGetInstanceProcAddr(vulkanContext.instance, "vkGetPhysicalDeviceSurfaceSupportKHR"));
 
     // Create a surface
-    surface = VK_NULL_HANDLE;
     for (auto surface_extension : surfaceExtensionsAvailable) {
         VkResult surfaceResult = VK_ERROR_INITIALIZATION_FAILED;
-        surface = VK_NULL_HANDLE;
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
         if (surface_extension == VK_KHR_WIN32_SURFACE_EXTENSION_NAME) {
@@ -712,7 +713,7 @@ bool VulkanCapsViewer::initVulkan()
             surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
             surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
             surfaceCreateInfo.hwnd = reinterpret_cast<HWND>(this->winId());
-            surfaceResult = vkCreateWin32SurfaceKHR(instance, &surfaceCreateInfo, nullptr, &surface);
+            surfaceResult = vkCreateWin32SurfaceKHR(vulkanContext.instance, &surfaceCreateInfo, nullptr, &vulkanContext.surface);
         }
 #endif
 
@@ -756,7 +757,7 @@ bool VulkanCapsViewer::initVulkan()
                 VkAndroidSurfaceCreateInfoKHR surfaceCreateInfo = {};
                 surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
                 surfaceCreateInfo.window = nativeWindow;
-                surfaceResult = vkCreateAndroidSurfaceKHR(instance, &surfaceCreateInfo, NULL, &surface);
+                surfaceResult = vkCreateAndroidSurfaceKHR(vulkanContext.instance, &surfaceCreateInfo, NULL, &vulkanContext.surface);
             }
         }
 #endif
@@ -768,7 +769,7 @@ bool VulkanCapsViewer::initVulkan()
             surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
             surfaceCreateInfo.display = wl_display_connect(NULL);
             surfaceCreateInfo.surface = nullptr;
-            surfaceResult = vkCreateWaylandSurfaceKHR(instance, &surfaceCreateInfo, nullptr, &surface);
+            surfaceResult = vkCreateWaylandSurfaceKHR(vulkanContext.instance, &surfaceCreateInfo, nullptr, &vulkanContext.surface);
         }
 #endif
 
@@ -778,7 +779,7 @@ bool VulkanCapsViewer::initVulkan()
             surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
             surfaceCreateInfo.connection = QX11Info::connection();
             surfaceCreateInfo.window = static_cast<xcb_window_t>(this->winId());
-            surfaceResult = vkCreateXcbSurfaceKHR(instance, &surfaceCreateInfo, nullptr, &surface);
+            surfaceResult = vkCreateXcbSurfaceKHR(vulkanContext.instance, &surfaceCreateInfo, nullptr, &vulkanContext.surface);
         }
 #endif
 
@@ -788,7 +789,7 @@ bool VulkanCapsViewer::initVulkan()
             surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;
             pMetalSurrogate = new QVukanSurrogate();
             surfaceCreateInfo.pView = (void*)pMetalSurrogate->winId();
-            surfaceResult = vkCreateMacOSSurfaceMVK(instance, &surfaceCreateInfo, nullptr, &surface);
+            surfaceResult = vkCreateMacOSSurfaceMVK(vulkanContext.instance, &surfaceCreateInfo, nullptr, &vulkanContext.surface);
         }
 #endif
 
@@ -798,15 +799,15 @@ bool VulkanCapsViewer::initVulkan()
             surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;
             pMetalSurrogate = new QVukanSurrogate();
             surfaceCreateInfo.pView = (void*)pMetalSurrogate->winId();
-            surfaceResult = vkCreateIOSSurfaceMVK(instance, &surfaceCreateInfo, nullptr, &surface);
+            surfaceResult = vkCreateIOSSurfaceMVK(vulkanContext.instance, &surfaceCreateInfo, nullptr, &vulkanContext.surface);
         }
 #endif
         if (surfaceResult == VK_SUCCESS) {
-            surfaceExtension = surface_extension;
+            vulkanContext.surfaceExtension = surface_extension;
             break;
+        } else {
+            vulkanContext.surface = VK_NULL_HANDLE;
         }
-        else
-            surface = VK_NULL_HANDLE;
     }
 
     displayInstanceLayers();
@@ -824,13 +825,13 @@ void VulkanCapsViewer::getGPUinfo(VulkanDeviceInfo *GPU, uint32_t id, VkPhysical
     GPU->readExtensions();
     GPU->readPhysicalProperties();
     GPU->readLayers();
-    GPU->readQueueFamilies(surface);
+    GPU->readQueueFamilies();
     GPU->readPhysicalFeatures();
     GPU->readPhysicalLimits();
     GPU->readPhysicalMemoryProperties();
-    GPU->readSurfaceInfo(surface, surfaceExtension);
+    GPU->readSurfaceInfo();
     GPU->readPlatformDetails();
-    GPU->readProfiles(instance);
+    GPU->readProfiles();
     // Request all available queues
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     for (uint32_t i = 0; i < GPU->queueFamilies.size(); ++i)
@@ -879,7 +880,7 @@ void VulkanCapsViewer::getGPUinfo(VulkanDeviceInfo *GPU, uint32_t id, VkPhysical
     // This information is used to disable uploads to the database
     GPU->hasFeaturModifyingTool = false;
     PFN_vkGetPhysicalDeviceToolPropertiesEXT vkGetPhysicalDeviceToolPropertiesEXT{};
-    vkGetPhysicalDeviceToolPropertiesEXT = reinterpret_cast<PFN_vkGetPhysicalDeviceToolPropertiesEXT>(vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceToolPropertiesEXT"));
+    vkGetPhysicalDeviceToolPropertiesEXT = reinterpret_cast<PFN_vkGetPhysicalDeviceToolPropertiesEXT>(vkGetInstanceProcAddr(vulkanContext.instance, "vkGetPhysicalDeviceToolPropertiesEXT"));
     if (vkGetPhysicalDeviceToolPropertiesEXT) {
         uint32_t numTools;
         vkGetPhysicalDeviceToolPropertiesEXT(vulkanGPUs[0].device, &numTools, nullptr);
@@ -901,7 +902,7 @@ void VulkanCapsViewer::getGPUs()
     uint32_t numGPUs;
 
     // Enumerate devices
-    vkRes = vkEnumeratePhysicalDevices(instance, &numGPUs, NULL);
+    vkRes = vkEnumeratePhysicalDevices(vulkanContext.instance, &numGPUs, NULL);
     if (vkRes != VK_SUCCESS)
     {
         QMessageBox::warning(this, tr("Error"), "Could not enumerate device count!");
@@ -910,7 +911,7 @@ void VulkanCapsViewer::getGPUs()
     std::vector<VkPhysicalDevice> vulkanDevices;
     vulkanDevices.resize(numGPUs);
 
-    vkRes = vkEnumeratePhysicalDevices(instance, &numGPUs, &vulkanDevices.front());
+    vkRes = vkEnumeratePhysicalDevices(vulkanContext.instance, &numGPUs, &vulkanDevices.front());
     if (vkRes != VK_SUCCESS)
     {
         QMessageBox::warning(this, tr("Error"), "Could not enumerate physical devices!");
@@ -1015,30 +1016,45 @@ void addVkSampleCountFlagsItem(QStandardItem* parent, const QVariantMap::const_i
 
 void addUUIDItem(QStandardItem* parent, const QString& key, uint8_t* UUID)
 {
-    std::ostringstream uuidSs;
-    uuidSs << std::hex << std::noshowbase << std::uppercase;
+    std::ostringstream ss;
+    ss << std::hex << std::noshowbase << std::uppercase;
     for (uint32_t i = 0; i < VK_UUID_SIZE; i++) {
-        uuidSs << std::right << std::setw(2) << std::setfill('0') << static_cast<unsigned short>(UUID[i]);
-        if (i == 3 || i == 5 || i == 7 || i == 9) uuidSs << '-';
+        if (i == 4 || i == 6 || i == 8 || i == 10) ss << '-';
+        ss << std::right << std::setw(2) << std::setfill('0') << static_cast<unsigned short>(UUID[i]);
     }
     QList<QStandardItem*> item;
     item << new QStandardItem(key);
-    item << new QStandardItem(QString::fromStdString(uuidSs.str()));
+    item << new QStandardItem(QString::fromStdString(ss.str()));
     parent->appendRow(item);
 }
 
 void addUUIDItem(QStandardItem* parent, const QVariantMap::const_iterator& iterator)
 {
     const QJsonArray values = iterator.value().toJsonArray();
-    std::ostringstream uuidSs;
-    uuidSs << std::hex << std::noshowbase << std::uppercase;
-    for (size_t i = 0; i < values.size(); i++) {
-        uuidSs << std::right << std::setw(2) << std::setfill('0') << static_cast<unsigned short>(values[static_cast<int>(i)].toInt());
-        if (i == 3 || i == 5 || i == 7 || i == 9) uuidSs << '-';
+    std::ostringstream ss;
+    ss << std::hex << std::noshowbase << std::uppercase << std::setfill('0');
+    for (size_t i = 0; i < VK_UUID_SIZE; i++) {
+        if (i == 4 || i == 6 || i == 8 || i == 10) ss << '-';
+        ss << std::setw(2) << static_cast<unsigned short>(values[static_cast<int>(i)].toInt());
     }
     QList<QStandardItem*> item;
     item << new QStandardItem(iterator.key());
-    item << new QStandardItem(QString::fromStdString(uuidSs.str()));
+    item << new QStandardItem(QString::fromStdString(ss.str()));
+    parent->appendRow(item);
+}
+
+void addLUIDItem(QStandardItem* parent, const QVariantMap::const_iterator& iterator)
+{
+    const QJsonArray values = iterator.value().toJsonArray();
+    std::ostringstream ss;
+    ss << std::hex << std::noshowbase << std::uppercase << std::setfill('0');
+    for (size_t i = 0; i < VK_LUID_SIZE; i++) {
+        if (i == 4) ss << '-';
+        ss << std::setw(2) << static_cast<unsigned short>(values[static_cast<int>(i)].toInt());
+    }
+    QList<QStandardItem*> item;
+    item << new QStandardItem(iterator.key());
+    item << new QStandardItem(QString::fromStdString(ss.str()));
     parent->appendRow(item);
 }
 
@@ -1108,6 +1124,10 @@ void addPropertiesRow(QStandardItem* parent, const QVariantMap::const_iterator& 
     }
     if (vulkanResources::uuidValueNames.contains(key)) {
         addUUIDItem(parent, iterator);
+        return;
+    }
+    if (vulkanResources::luidValueNames.contains(key)) {
+        addLUIDItem(parent, iterator);
         return;
     }
     if (vulkanResources::hexValueNames.contains(key)) {
@@ -1649,7 +1669,7 @@ void VulkanCapsViewer::displayDeviceSurfaceInfo(VulkanDeviceInfo &device)
     }
 
     // Surface extension used
-    addTreeItem(treeWidget->invisibleRootItem(), "Surface extension", surfaceExtension);
+    addTreeItem(treeWidget->invisibleRootItem(), "Surface extension", vulkanContext.surfaceExtension);
 
     // Surface capabilities
     QTreeWidgetItem *surfaceCapsItem = addTreeItem(treeWidget->invisibleRootItem(), "Surface Capabilities", "");

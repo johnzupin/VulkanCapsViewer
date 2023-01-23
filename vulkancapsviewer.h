@@ -37,6 +37,7 @@
 #include "vulkansurfaceinfo.hpp"
 #include "vulkandatabase.h"
 #include "vulkanandroid.h"
+#include "VulkanContext.h"
 
 #include "vulkan/vulkan.h"
 
@@ -83,12 +84,9 @@ public:
 private:
     uint32_t instanceApiVersion;
     int selectedDeviceIndex = 0;
-    VkInstance instance = VK_NULL_HANDLE;
-    VkSurfaceKHR surface;
 #if defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK)
     QVukanSurrogate *pMetalSurrogate = nullptr;
-#endif
-    std::string surfaceExtension;
+#endif    
     Ui::vulkanCapsViewerClass ui;
     struct {
         TreeProxyFilter propertiesCore10;
