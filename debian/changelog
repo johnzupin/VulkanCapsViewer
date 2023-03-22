@@ -1,3 +1,28 @@
+vulkancapsviewer (3.29~rc1-1lunarg20.04-1) focal; urgency=medium
+
+  [ Sascha Willems ]
+  * Skip Vulkan SC extensions
+  * Updated to Vulkan Headers 1.3.241
+  * Add new queue bit
+  * Added custom filter proxy that also keeps children
+  * Added custom filter proxy that also keeps children
+
+  [ Sergey Popov ]
+  * Fix surface page on linux (#161)
+
+  [ firescry ]
+  * Update actions (#167)
+
+  [ Sascha Willems ]
+  * Added custom filter proxy that also keeps children
+  * Updated Ubuntu CI versions
+  * Revert "Fix surface page on linux (#161)" (#169)
+  * Trying to fix Linux CI (#168)
+  * Version bump
+  * Updated Vulkan headers to 1.3.243
+
+ -- john <john@odin>  Wed, 22 Mar 2023 12:06:40 -0600
+
 vulkancapsviewer (3.28~rc1-1lunarg20.04-1) focal; urgency=medium
 
   [ Sascha Willems ]
