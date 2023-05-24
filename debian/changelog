@@ -1,3 +1,16 @@
+vulkancapsviewer (3.30~rc1-1lunarg20.04-1) focal; urgency=medium
+
+  [ Sascha Willems ]
+  * Updated Vulkan headers to 1.3.246
+  * Updated header update script
+  * Remove display of surface min and max extents
+  * Updated Vulkan headers to 1.3.249
+  * Update CI (#175)
+  * Ci fix (#176)
+  * Updated Android builds
+
+ -- john <john@odin>  Wed, 24 May 2023 09:56:12 -0600
+
 vulkancapsviewer (3.29~rc1-1lunarg20.04-1) focal; urgency=medium
 
   [ Sascha Willems ]
