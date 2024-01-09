@@ -1,3 +1,40 @@
+vulkancapsviewer (3.32~rc1-1lunarg20.04-1) focal; urgency=medium
+
+  [ Sascha Willems ]
+  * Enable VK_EXT_swapchain_colorspace if available
+  * Use V4 api routes for updates and checks
+  * Version bump
+
+  [ firescry ]
+  * Do not include libwayland-client.so within AppImage for Linux/Wayland (#171)
+
+  [ Sascha Willems ]
+  * Updated Vulkan Headers to 1.3.254
+  * QNX platform define
+  * Add QNX platform define for QNX
+
+  [ Sergey Popov ]
+  * Add flatpak manifest (#182)
+
+  [ Sascha Willems ]
+  * Updated Vulkan Headers to 1.3.257
+  * Trying to fix broken CI
+  * Updated Vulkan Headers to 1.3.257
+  * Trying to fix broken CI (#185)
+  * Updated Vulkan Headers to 1.3.260
+  * Disable properties for VK_EXT_host_image_copy
+  * Updated Vulkan Headers to 1.3.261
+  * Restructure extension property value display code
+  * Add proper support for VK_EXT_host_image_copy
+  * Image layouts for VK_EXT_host_image_copy
+  * Version bump
+  * Small fix for macro
+  * Updated profiles library to SDK 1.3.250.1
+  * Updated Android target SDK version as per Google requirement for App updates to the store
+  * Updated headers to 1.3.264
+
+ -- john <john@odin>  Tue, 09 Jan 2024 16:19:17 -0700
+
 vulkancapsviewer (3.30~rc1-1lunarg20.04-1) focal; urgency=medium
 
   [ Sascha Willems ]
