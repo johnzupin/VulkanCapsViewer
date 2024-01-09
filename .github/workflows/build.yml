@@ -18,7 +18,7 @@ jobs:
         with:
           submodules: "recursive"
 
-      - uses: jurplel/install-qt-action@v2
+      - uses: jurplel/install-qt-action@v3
         with:
           version: 5.12.9
           host: linux
@@ -55,7 +55,7 @@ jobs:
         with:
           submodules: "recursive"
 
-      - uses: jurplel/install-qt-action@v2
+      - uses: jurplel/install-qt-action@v3
         with:
           version: 5.12.9
           host: linux
@@ -78,7 +78,7 @@ jobs:
           chmod a+x linuxdeployqt-continuous-x86_64.AppImage
           export VERSION=${TARGET_PLATFORM}
           cp vulkanCapsViewer.png appdir/usr/share/icons/hicolor/256x256/apps/vulkanCapsViewer.png
-          ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/* -appimage
+          ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/* -appimage -exclude-libs=libwayland-client.so
       - name: Upload
         if: github.ref == 'refs/heads/master'
         run: curl -T Vulkan_Caps_Viewer-wayland-x86_64.AppImage ftp://${{ secrets.FTP_USER_NAME }}:${{ secrets.FTP_PASS }}@${{ secrets.FTP_SERVER_NAME }}
@@ -92,7 +92,7 @@ jobs:
         with:
           submodules: "recursive"
 
-      - uses: jurplel/install-qt-action@v2
+      - uses: jurplel/install-qt-action@v3
         with:
           version: 5.12.9
           host: mac
@@ -130,7 +130,7 @@ jobs:
         with:
           submodules: "recursive"
 
-      - uses: jurplel/install-qt-action@v2
+      - uses: jurplel/install-qt-action@v3
 
       - name: Build
         env:
@@ -155,7 +155,7 @@ jobs:
         with:
           arch: x86
 
-      - uses: jurplel/install-qt-action@v2
+      - uses: jurplel/install-qt-action@v3
         with:
           setup-python: 'false'
           version: '5.12.9'

@@ -70,6 +70,8 @@ private:
     bool extensionSupported(const char* extensionName);
     void readPhysicalFeatures_AMD();
     void readPhysicalProperties_AMD();
+    void readPhysicalFeatures_AMDX();
+    void readPhysicalProperties_AMDX();
     void readPhysicalFeatures_ARM();
     void readPhysicalProperties_ARM();
     void readPhysicalFeatures_EXT();
@@ -79,16 +81,18 @@ private:
     void readPhysicalFeatures_INTEL();
     void readPhysicalFeatures_KHR();
     void readPhysicalProperties_KHR();
+    void readPhysicalProperties_MSFT();
     void readPhysicalFeatures_NV();
     void readPhysicalProperties_NV();
     void readPhysicalProperties_NVX();
     void readPhysicalFeatures_QCOM();
     void readPhysicalProperties_QCOM();
+    void readPhysicalFeatures_QNX();
     void readPhysicalFeatures_SEC();
     void readPhysicalFeatures_VALVE();
 
 public:
-    const uint32_t vkHeaderVersion = 250;
+    const uint32_t vkHeaderVersion = 264;
     std::vector<Feature2> features2;
     std::vector<Property2> properties2;
     std::vector<VkExtensionProperties> extensions;
