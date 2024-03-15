@@ -1,3 +1,21 @@
+vulkancapsviewer (3.34~rc1-1lunarg20.04-1) focal; urgency=medium
+
+  [ Ybalrid (Arthur Brainville) ]
+  * Fix build error (with Qt 5.15.2+clang) ambiguous cast with QVariant constructor
+  * Lower Android SDK target/minimum to 29 (Android 10. Devices like Pico 4 XR headset...)
+  * Raise back the target sdk version to 33 because of playstore rules
+  * Revert "Fix build error (with Qt 5.15.2+clang) ambiguous cast with QVariant constructor"
+
+  [ Alexelnet ]
+  * Additional information for building on linux.
+
+  [ Sascha Willems ]
+  * Updated copyright
+  * Updated to Vulkan headers 1.3.278
+  * Update profiles library (#200)
+
+ -- john <john@odin>  Fri, 15 Mar 2024 11:48:02 -0600
+
 vulkancapsviewer (3.33~rc1-1lunarg20.04-1) focal; urgency=medium
 
   [ Sascha Willems ]
