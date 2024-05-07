@@ -1,3 +1,12 @@
+vulkancapsviewer (3.40~rc1-1lunarg22.04-1) jammy; urgency=medium
+
+  [ Sascha Willems ]
+  * Store format flags as strings Should avoid problems with flag values larger than JSON's max number limit See https://github.com/SaschaWillems/vulkan.gpuinfo.org/issues/50
+  * Store ostype in json Makes some back-end stuff easier
+  * Version bump App and report
+
+ -- john <john@odin>  Tue, 07 May 2024 11:39:46 -0600
+
 vulkancapsviewer (3.34~rc1-1lunarg22.04-1) jammy; urgency=medium
 
   [ Ybalrid (Arthur Brainville) ]
