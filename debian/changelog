@@ -1,3 +1,33 @@
+vulkancapsviewer (4.00~rc1-1lunarg22.04-1) jammy; urgency=medium
+
+  [ Sascha Willems ]
+  * Updated to Vulkan headers 1.3.296
+  * Version bump
+  * Updated to Vulkan headers 1.3.299
+  * Updated to Vulkan headers 1.3.301
+
+  [ sean ]
+  * Fix: Use C++17 as standard in CMake script (#201)
+
+  [ Sascha Willems ]
+  * Update CI actions
+  * Update Readme with currently used Qt version
+  * Cleanup files
+  * Add back Visual Studio project file
+
+  [ Karen Webb ]
+  * surface: Better support for linux surface backends (#225)
+
+  [ Sascha Willems ]
+  * Update MacOS CI (#226)
+  * Add support for Vulkan 1.4 (#228)
+  * Bump Android application version
+
+  [ John Zupin ]
+  * packaging: debian: update patches
+
+ -- john <john@odin>  Mon, 06 Jan 2025 17:20:42 -0700
+
 vulkancapsviewer (3.42~rc1-1lunarg22.04-1) jammy; urgency=medium
 
   [ Bob Ellison ]
