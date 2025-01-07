@@ -3,26 +3,26 @@ Date: Thu, 8 Dec 2022 14:20:37 -0700
 Subject: patch: remove CMakeLists.txt file to use qmake
 
 ---
- CMakeLists.txt | 101 ---------------------------------------------------------
- 1 file changed, 101 deletions(-)
+ CMakeLists.txt | 106 ---------------------------------------------------------
+ 1 file changed, 106 deletions(-)
  delete mode 100755 CMakeLists.txt
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
 deleted file mode 100755
-index 929a962..0000000
+index c0feade..0000000
 --- a/CMakeLists.txt
 +++ /dev/null
-@@ -1,101 +0,0 @@
+@@ -1,106 +0,0 @@
 -# example usage:
 -# You must tell cmake where to find the Vulkan Headers and a loader library. For example on macOS:
 -#
--# cmake .. -DVULKAN_HEADERS_INSTALL_DIR=~/VulkanSDK/1.3.230.0/macOS -DVULKAN_LOADER_INSTALL_DIR=/Users/lunarg/VulkanSDK/1.3.230.0/macOS
+-# cmake .. -DVULKAN_LOADER_INSTALL_DIR=/Users/lunarg/VulkanSDK/1.3.230.0/macOS
 -# cmake --build . --config Release  
 -
 -cmake_minimum_required(VERSION 3.10.2)
 -project(VK_CAPS_VIEWER LANGUAGES CXX)
 -
--set(CMAKE_CXX_STANDARD 11)
+-set(CMAKE_CXX_STANDARD 17)
 -set(CMAKE_INCLUDE_CURRENT_DIR ON)
 -set(CMAKE_AUTOMOC ON)
 -set(CMAKE_AUTORCC ON)
@@ -76,7 +76,12 @@ index 929a962..0000000
 -include(GNUInstallDirs)
 -install(TARGETS vulkanCapsViewer DESTINATION ${CMAKE_INSTALL_BINDIR})
 -
--target_include_directories(vulkanCapsViewer PRIVATE "${VULKAN_HEADERS_INSTALL_DIR}/include" "./")
+-if (NOT VULKAN_HEADERS_INSTALL_DIR)
+-    # By default use the Vulkan-Headers submodule
+-    target_include_directories(vulkanCapsViewer PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Vulkan-Headers/include" "./")
+-else()
+-    target_include_directories(vulkanCapsViewer PRIVATE "${VULKAN_HEADERS_INSTALL_DIR}/include" "./")
+-endif()
 -target_compile_definitions(vulkanCapsViewer PRIVATE ${VULKANCAPSVIEWER_DEFINITIONS})
 -
 -if(NOT APPLE)
