@@ -86,6 +86,8 @@ void VulkanDeviceInfoExtensions::readPhysicalProperties_AMDX() {
 		pushProperty2(extension, "maxExecutionGraphShaderPayloadSize", QVariant(extProps->maxExecutionGraphShaderPayloadSize));
 		pushProperty2(extension, "maxExecutionGraphShaderPayloadCount", QVariant(extProps->maxExecutionGraphShaderPayloadCount));
 		pushProperty2(extension, "executionGraphDispatchAddressAlignment", QVariant(extProps->executionGraphDispatchAddressAlignment));
+		pushProperty2(extension, "maxExecutionGraphWorkgroupCount", QVariant::fromValue(QVariantList({ extProps->maxExecutionGraphWorkgroupCount[0], extProps->maxExecutionGraphWorkgroupCount[1], extProps->maxExecutionGraphWorkgroupCount[2] })));
+		pushProperty2(extension, "maxExecutionGraphWorkgroups", QVariant(extProps->maxExecutionGraphWorkgroups));
 		delete extProps;
 	}
 }
@@ -613,6 +615,26 @@ void VulkanDeviceInfoExtensions::readPhysicalProperties_EXT() {
 		pushProperty2(extension, "nativeUnalignedPerformance", QVariant(bool(extProps->nativeUnalignedPerformance)));
 		delete extProps;
 	}
+	if (extensionSupported("VK_EXT_device_generated_commands")) {
+		const char* extension("VK_EXT_device_generated_commands");
+		VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT* extProps = new VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT{};
+		extProps->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_EXT;
+		deviceProps2 = initDeviceProperties2(extProps);
+		vulkanContext.vkGetPhysicalDeviceProperties2KHR(device, &deviceProps2);
+		pushProperty2(extension, "maxIndirectPipelineCount", QVariant(extProps->maxIndirectPipelineCount));
+		pushProperty2(extension, "maxIndirectShaderObjectCount", QVariant(extProps->maxIndirectShaderObjectCount));
+		pushProperty2(extension, "maxIndirectSequenceCount", QVariant(extProps->maxIndirectSequenceCount));
+		pushProperty2(extension, "maxIndirectCommandsTokenCount", QVariant(extProps->maxIndirectCommandsTokenCount));
+		pushProperty2(extension, "maxIndirectCommandsTokenOffset", QVariant(extProps->maxIndirectCommandsTokenOffset));
+		pushProperty2(extension, "maxIndirectCommandsIndirectStride", QVariant(extProps->maxIndirectCommandsIndirectStride));
+		pushProperty2(extension, "supportedIndirectCommandsInputModes", QVariant(extProps->supportedIndirectCommandsInputModes));
+		pushProperty2(extension, "supportedIndirectCommandsShaderStages", QVariant(extProps->supportedIndirectCommandsShaderStages));
+		pushProperty2(extension, "supportedIndirectCommandsShaderStagesPipelineBinding", QVariant(extProps->supportedIndirectCommandsShaderStagesPipelineBinding));
+		pushProperty2(extension, "supportedIndirectCommandsShaderStagesShaderBinding", QVariant(extProps->supportedIndirectCommandsShaderStagesShaderBinding));
+		pushProperty2(extension, "deviceGeneratedCommandsTransformFeedback", QVariant(bool(extProps->deviceGeneratedCommandsTransformFeedback)));
+		pushProperty2(extension, "deviceGeneratedCommandsMultiDrawIndirectCount", QVariant(bool(extProps->deviceGeneratedCommandsMultiDrawIndirectCount)));
+		delete extProps;
+	}
 }
 void VulkanDeviceInfoExtensions::readPhysicalProperties_HUAWEI() {
 	VkPhysicalDeviceProperties2 deviceProps2{};
@@ -942,6 +964,15 @@ void VulkanDeviceInfoExtensions::readPhysicalProperties_KHR() {
 		pushProperty2(extension, "cooperativeMatrixSupportedStages", QVariant(extProps->cooperativeMatrixSupportedStages));
 		delete extProps;
 	}
+	if (extensionSupported("VK_KHR_compute_shader_derivatives")) {
+		const char* extension("VK_KHR_compute_shader_derivatives");
+		VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR* extProps = new VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR{};
+		extProps->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_PROPERTIES_KHR;
+		deviceProps2 = initDeviceProperties2(extProps);
+		vulkanContext.vkGetPhysicalDeviceProperties2KHR(device, &deviceProps2);
+		pushProperty2(extension, "meshAndTaskShaderDerivatives", QVariant(bool(extProps->meshAndTaskShaderDerivatives)));
+		delete extProps;
+	}
 	if (extensionSupported("VK_KHR_vertex_attribute_divisor")) {
 		const char* extension("VK_KHR_vertex_attribute_divisor");
 		VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR* extProps = new VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR{};
@@ -1185,6 +1216,17 @@ void VulkanDeviceInfoExtensions::readPhysicalProperties_NV() {
 		pushProperty2(extension, "extendedSparseBufferUsageFlags", QVariant(extProps->extendedSparseBufferUsageFlags));
 		delete extProps;
 	}
+	if (extensionSupported("VK_NV_cooperative_matrix2")) {
+		const char* extension("VK_NV_cooperative_matrix2");
+		VkPhysicalDeviceCooperativeMatrix2PropertiesNV* extProps = new VkPhysicalDeviceCooperativeMatrix2PropertiesNV{};
+		extProps->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_2_PROPERTIES_NV;
+		deviceProps2 = initDeviceProperties2(extProps);
+		vulkanContext.vkGetPhysicalDeviceProperties2KHR(device, &deviceProps2);
+		pushProperty2(extension, "cooperativeMatrixWorkgroupScopeMaxWorkgroupSize", QVariant(extProps->cooperativeMatrixWorkgroupScopeMaxWorkgroupSize));
+		pushProperty2(extension, "cooperativeMatrixFlexibleDimensionsMaxDimension", QVariant(extProps->cooperativeMatrixFlexibleDimensionsMaxDimension));
+		pushProperty2(extension, "cooperativeMatrixWorkgroupScopeReservedSharedMemory", QVariant(extProps->cooperativeMatrixWorkgroupScopeReservedSharedMemory));
+		delete extProps;
+	}
 }
 void VulkanDeviceInfoExtensions::readPhysicalProperties_NVX() {
 	VkPhysicalDeviceProperties2 deviceProps2{};
@@ -1298,6 +1340,7 @@ void VulkanDeviceInfoExtensions::readPhysicalFeatures_AMDX() {
 		deviceFeatures2 = initDeviceFeatures2(extFeatures);
 		vulkanContext.vkGetPhysicalDeviceFeatures2KHR(device, &deviceFeatures2);
 		pushFeature2(extension, "shaderEnqueue", extFeatures->shaderEnqueue);
+		pushFeature2(extension, "shaderMeshEnqueue", extFeatures->shaderMeshEnqueue);
 		delete extFeatures;
 	}
 }
@@ -1894,6 +1937,15 @@ void VulkanDeviceInfoExtensions::readPhysicalFeatures_EXT() {
 		pushFeature2(extension, "primitiveTopologyPatchListRestart", extFeatures->primitiveTopologyPatchListRestart);
 		delete extFeatures;
 	}
+	if (extensionSupported("VK_EXT_present_mode_fifo_latest_ready")) {
+		const char* extension("VK_EXT_present_mode_fifo_latest_ready");
+		VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT* extFeatures = new VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT{};
+		extFeatures->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_EXT;
+		deviceFeatures2 = initDeviceFeatures2(extFeatures);
+		vulkanContext.vkGetPhysicalDeviceFeatures2KHR(device, &deviceFeatures2);
+		pushFeature2(extension, "presentModeFifoLatestReady", extFeatures->presentModeFifoLatestReady);
+		delete extFeatures;
+	}
 	if (extensionSupported("VK_EXT_pipeline_properties")) {
 		const char* extension("VK_EXT_pipeline_properties");
 		VkPhysicalDevicePipelinePropertiesFeaturesEXT* extFeatures = new VkPhysicalDevicePipelinePropertiesFeaturesEXT{};
@@ -2226,6 +2278,34 @@ void VulkanDeviceInfoExtensions::readPhysicalFeatures_EXT() {
 		pushFeature2(extension, "shaderReplicatedComposites", extFeatures->shaderReplicatedComposites);
 		delete extFeatures;
 	}
+	if (extensionSupported("VK_EXT_device_generated_commands")) {
+		const char* extension("VK_EXT_device_generated_commands");
+		VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT* extFeatures = new VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT{};
+		extFeatures->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_EXT;
+		deviceFeatures2 = initDeviceFeatures2(extFeatures);
+		vulkanContext.vkGetPhysicalDeviceFeatures2KHR(device, &deviceFeatures2);
+		pushFeature2(extension, "deviceGeneratedCommands", extFeatures->deviceGeneratedCommands);
+		pushFeature2(extension, "dynamicGeneratedPipelineLayout", extFeatures->dynamicGeneratedPipelineLayout);
+		delete extFeatures;
+	}
+	if (extensionSupported("VK_EXT_depth_clamp_control")) {
+		const char* extension("VK_EXT_depth_clamp_control");
+		VkPhysicalDeviceDepthClampControlFeaturesEXT* extFeatures = new VkPhysicalDeviceDepthClampControlFeaturesEXT{};
+		extFeatures->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_CONTROL_FEATURES_EXT;
+		deviceFeatures2 = initDeviceFeatures2(extFeatures);
+		vulkanContext.vkGetPhysicalDeviceFeatures2KHR(device, &deviceFeatures2);
+		pushFeature2(extension, "depthClampControl", extFeatures->depthClampControl);
+		delete extFeatures;
+	}
+	if (extensionSupported("VK_EXT_vertex_attribute_robustness")) {
+		const char* extension("VK_EXT_vertex_attribute_robustness");
+		VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT* extFeatures = new VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT{};
+		extFeatures->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_ROBUSTNESS_FEATURES_EXT;
+		deviceFeatures2 = initDeviceFeatures2(extFeatures);
+		vulkanContext.vkGetPhysicalDeviceFeatures2KHR(device, &deviceFeatures2);
+		pushFeature2(extension, "vertexAttributeRobustness", extFeatures->vertexAttributeRobustness);
+		delete extFeatures;
+	}
 }
 void VulkanDeviceInfoExtensions::readPhysicalFeatures_HUAWEI() {
 	VkPhysicalDeviceFeatures2 deviceFeatures2{};
@@ -2255,6 +2335,15 @@ void VulkanDeviceInfoExtensions::readPhysicalFeatures_HUAWEI() {
 		vulkanContext.vkGetPhysicalDeviceFeatures2KHR(device, &deviceFeatures2);
 		pushFeature2(extension, "clustercullingShader", extFeatures->clustercullingShader);
 		pushFeature2(extension, "multiviewClusterCullingShader", extFeatures->multiviewClusterCullingShader);
+		delete extFeatures;
+	}
+	if (extensionSupported("VK_HUAWEI_hdr_vivid")) {
+		const char* extension("VK_HUAWEI_hdr_vivid");
+		VkPhysicalDeviceHdrVividFeaturesHUAWEI* extFeatures = new VkPhysicalDeviceHdrVividFeaturesHUAWEI{};
+		extFeatures->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_VIVID_FEATURES_HUAWEI;
+		deviceFeatures2 = initDeviceFeatures2(extFeatures);
+		vulkanContext.vkGetPhysicalDeviceFeatures2KHR(device, &deviceFeatures2);
+		pushFeature2(extension, "hdrVivid", extFeatures->hdrVivid);
 		delete extFeatures;
 	}
 }
@@ -2717,6 +2806,25 @@ void VulkanDeviceInfoExtensions::readPhysicalFeatures_KHR() {
 		pushFeature2(extension, "cooperativeMatrixRobustBufferAccess", extFeatures->cooperativeMatrixRobustBufferAccess);
 		delete extFeatures;
 	}
+	if (extensionSupported("VK_KHR_compute_shader_derivatives")) {
+		const char* extension("VK_KHR_compute_shader_derivatives");
+		VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR* extFeatures = new VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR{};
+		extFeatures->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR;
+		deviceFeatures2 = initDeviceFeatures2(extFeatures);
+		vulkanContext.vkGetPhysicalDeviceFeatures2KHR(device, &deviceFeatures2);
+		pushFeature2(extension, "computeDerivativeGroupQuads", extFeatures->computeDerivativeGroupQuads);
+		pushFeature2(extension, "computeDerivativeGroupLinear", extFeatures->computeDerivativeGroupLinear);
+		delete extFeatures;
+	}
+	if (extensionSupported("VK_KHR_video_encode_av1")) {
+		const char* extension("VK_KHR_video_encode_av1");
+		VkPhysicalDeviceVideoEncodeAV1FeaturesKHR* extFeatures = new VkPhysicalDeviceVideoEncodeAV1FeaturesKHR{};
+		extFeatures->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_AV1_FEATURES_KHR;
+		deviceFeatures2 = initDeviceFeatures2(extFeatures);
+		vulkanContext.vkGetPhysicalDeviceFeatures2KHR(device, &deviceFeatures2);
+		pushFeature2(extension, "videoEncodeAV1", extFeatures->videoEncodeAV1);
+		delete extFeatures;
+	}
 	if (extensionSupported("VK_KHR_video_maintenance1")) {
 		const char* extension("VK_KHR_video_maintenance1");
 		VkPhysicalDeviceVideoMaintenance1FeaturesKHR* extFeatures = new VkPhysicalDeviceVideoMaintenance1FeaturesKHR{};
@@ -2784,6 +2892,15 @@ void VulkanDeviceInfoExtensions::readPhysicalFeatures_KHR() {
 		deviceFeatures2 = initDeviceFeatures2(extFeatures);
 		vulkanContext.vkGetPhysicalDeviceFeatures2KHR(device, &deviceFeatures2);
 		pushFeature2(extension, "maintenance6", extFeatures->maintenance6);
+		delete extFeatures;
+	}
+	if (extensionSupported("VK_KHR_video_encode_quantization_map")) {
+		const char* extension("VK_KHR_video_encode_quantization_map");
+		VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR* extFeatures = new VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR{};
+		extFeatures->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_QUANTIZATION_MAP_FEATURES_KHR;
+		deviceFeatures2 = initDeviceFeatures2(extFeatures);
+		vulkanContext.vkGetPhysicalDeviceFeatures2KHR(device, &deviceFeatures2);
+		pushFeature2(extension, "videoEncodeQuantizationMap", extFeatures->videoEncodeQuantizationMap);
 		delete extFeatures;
 	}
 	if (extensionSupported("VK_KHR_shader_relaxed_extended_instruction")) {
@@ -3133,6 +3250,21 @@ void VulkanDeviceInfoExtensions::readPhysicalFeatures_NV() {
 		deviceFeatures2 = initDeviceFeatures2(extFeatures);
 		vulkanContext.vkGetPhysicalDeviceFeatures2KHR(device, &deviceFeatures2);
 		pushFeature2(extension, "rayTracingValidation", extFeatures->rayTracingValidation);
+		delete extFeatures;
+	}
+	if (extensionSupported("VK_NV_cooperative_matrix2")) {
+		const char* extension("VK_NV_cooperative_matrix2");
+		VkPhysicalDeviceCooperativeMatrix2FeaturesNV* extFeatures = new VkPhysicalDeviceCooperativeMatrix2FeaturesNV{};
+		extFeatures->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_2_FEATURES_NV;
+		deviceFeatures2 = initDeviceFeatures2(extFeatures);
+		vulkanContext.vkGetPhysicalDeviceFeatures2KHR(device, &deviceFeatures2);
+		pushFeature2(extension, "cooperativeMatrixWorkgroupScope", extFeatures->cooperativeMatrixWorkgroupScope);
+		pushFeature2(extension, "cooperativeMatrixFlexibleDimensions", extFeatures->cooperativeMatrixFlexibleDimensions);
+		pushFeature2(extension, "cooperativeMatrixReductions", extFeatures->cooperativeMatrixReductions);
+		pushFeature2(extension, "cooperativeMatrixConversions", extFeatures->cooperativeMatrixConversions);
+		pushFeature2(extension, "cooperativeMatrixPerElementOperations", extFeatures->cooperativeMatrixPerElementOperations);
+		pushFeature2(extension, "cooperativeMatrixTensorAddressing", extFeatures->cooperativeMatrixTensorAddressing);
+		pushFeature2(extension, "cooperativeMatrixBlockLoads", extFeatures->cooperativeMatrixBlockLoads);
 		delete extFeatures;
 	}
 }

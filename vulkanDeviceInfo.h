@@ -51,10 +51,6 @@
 #include <sys/system_properties.h>
 #endif
 
-#ifdef VK_USE_PLATFORM_XCB_KHR
-#include <QX11Info>
-#endif
-
 #include "vulkanandroid.h"
 #if !defined(DISABLE_PROFILES)
 #include "vulkan_profiles.hpp"
@@ -104,12 +100,14 @@ public:
     QVariantMap core11Features;
     QVariantMap core12Features;
     QVariantMap core13Features;
+    QVariantMap core14Features;
     bool hasSubgroupProperties = false;
     bool hasFeaturModifyingTool = false;
     QVariantMap subgroupProperties;
     QVariantMap core11Properties;
     QVariantMap core12Properties;
     QVariantMap core13Properties;
+    QVariantMap core14Properties;
     std::vector<VulkanQueueFamilyInfo> queueFamilies;
     std::vector<VulkanFormatInfo> formats;
     VulkanSurfaceInfo surfaceInfo;
