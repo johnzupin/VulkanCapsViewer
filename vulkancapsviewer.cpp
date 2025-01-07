@@ -56,10 +56,6 @@
 #include <sys/utsname.h>
 #endif
 
-#ifdef VK_USE_PLATFORM_XCB_KHR
-#include <QX11Info>
-#endif
-
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 #include <wayland-client.h>
 #endif
@@ -83,8 +79,8 @@ extern "C" void *makeViewMetalCompatible(void* handle);
 
 using std::to_string;
 
-const QString VulkanCapsViewer::version = "3.42";
-const QString VulkanCapsViewer::reportVersion = "3.3";
+const QString VulkanCapsViewer::version = "4.00";
+const QString VulkanCapsViewer::reportVersion = "4.0";
 
 OSInfo getOperatingSystem()
 {
@@ -263,6 +259,10 @@ VulkanCapsViewer::VulkanCapsViewer(QWidget *parent)
     ui.treeViewDevicePropertiesCore13->setModel(&filterProxies.propertiesCore13);
     connectFilterAndModel(models.propertiesCore13, filterProxies.propertiesCore13);
     connect(ui.filterLineEditPropertiesCore13, SIGNAL(textChanged(QString)), this, SLOT(slotFilterPropertiesCore13(QString)));
+    // Core 1.4 properties
+    ui.treeViewDevicePropertiesCore14->setModel(&filterProxies.propertiesCore14);
+    connectFilterAndModel(models.propertiesCore14, filterProxies.propertiesCore14);
+    connect(ui.filterLineEditPropertiesCore14, SIGNAL(textChanged(QString)), this, SLOT(slotFilterPropertiesCore14(QString)));
     // Extension properties
     ui.treeViewDevicePropertiesExtensions->setModel(&filterProxies.propertiesExtensions);
     connectFilterAndModel(models.propertiesExtensions, filterProxies.propertiesExtensions);
@@ -283,6 +283,10 @@ VulkanCapsViewer::VulkanCapsViewer(QWidget *parent)
     ui.treeViewDeviceFeaturesCore13->setModel(&filterProxies.featuresCore13);
     connectFilterAndModel(models.featuresCore13, filterProxies.featuresCore13);
     connect(ui.filterLineEditFeaturesCore13, SIGNAL(textChanged(QString)), this, SLOT(slotFilterFeaturesCore13(QString)));
+    // Core 1.4 features
+    ui.treeViewDeviceFeaturesCore14->setModel(&filterProxies.featuresCore14);
+    connectFilterAndModel(models.featuresCore14, filterProxies.featuresCore14);
+    connect(ui.filterLineEditFeaturesCore14, SIGNAL(textChanged(QString)), this, SLOT(slotFilterFeaturesCore14(QString)));
     // Extension features
     ui.treeViewDeviceFeaturesExtensions->setModel(&filterProxies.featuresExtensions);
     connectFilterAndModel(models.featuresExtensions, filterProxies.featuresExtensions);
@@ -504,6 +508,12 @@ void VulkanCapsViewer::slotFilterPropertiesCore13(QString text)
     filterProxies.propertiesCore13.setFilterRegExp(regExp);
 }
 
+void VulkanCapsViewer::slotFilterPropertiesCore14(QString text)
+{
+    QRegExp regExp(text, Qt::CaseInsensitive, QRegExp::RegExp);
+    filterProxies.propertiesCore14.setFilterRegExp(regExp);
+}
+
 void VulkanCapsViewer::slotFilterPropertiesExtensions(QString text)
 {
     QRegExp regExp(text, Qt::CaseInsensitive, QRegExp::RegExp);
@@ -532,6 +542,12 @@ void VulkanCapsViewer::slotFilterFeaturesCore13(QString text)
 {
     QRegExp regExp(text, Qt::CaseInsensitive, QRegExp::RegExp);
     filterProxies.featuresCore13.setFilterRegExp(regExp);
+}
+
+void VulkanCapsViewer::slotFilterFeaturesCore14(QString text)
+{
+    QRegExp regExp(text, Qt::CaseInsensitive, QRegExp::RegExp);
+    filterProxies.featuresCore14.setFilterRegExp(regExp);
 }
 
 void VulkanCapsViewer::slotFilterFeaturesExtensions(QString text)
@@ -785,21 +801,62 @@ bool VulkanCapsViewer::initVulkan()
 
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
         if (surface_extension == VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME) {
-            VkWaylandSurfaceCreateInfoKHR surfaceCreateInfo = {};
-            surfaceCreateInfo.pNext = nullptr;
-            surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
-            surfaceCreateInfo.display = wl_display_connect(NULL);
-            surfaceCreateInfo.surface = nullptr;
-            surfaceResult = vkCreateWaylandSurfaceKHR(vulkanContext.instance, &surfaceCreateInfo, nullptr, &vulkanContext.surface);
+            static const wl_registry_listener WAYLAND_LISTENER {
+                .global = [](void *data, wl_registry*, uint32_t name, const char* interface, uint32_t){
+                    if (!strcmp(interface, wl_compositor_interface.name)) {
+                        *static_cast<uint32_t *>(data) = name;
+                    }
+                },
+                .global_remove = [](void*, wl_registry*, uint32_t){
+
+                }
+            };
+
+            const auto wayland_display = wl_display_connect(nullptr);
+            const auto wayland_registry = wl_display_get_registry(wayland_display);
+            uint32_t wayland_compositor_name = 0;
+            wl_registry_add_listener(wayland_registry, &WAYLAND_LISTENER, &wayland_compositor_name);
+            wl_display_roundtrip(wayland_display);
+
+            if (wayland_compositor_name > 0) {
+                const auto wayland_compositor = static_cast<wl_compositor *>(
+                    wl_registry_bind(wayland_registry, wayland_compositor_name, &wl_compositor_interface, 1)
+                );
+                const auto wayland_surface = wl_compositor_create_surface(wayland_compositor);
+                VkWaylandSurfaceCreateInfoKHR surfaceCreateInfo = {};
+                surfaceCreateInfo.pNext = nullptr;
+                surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+                surfaceCreateInfo.display = wayland_display;
+                surfaceCreateInfo.surface = wayland_surface;
+                surfaceResult = vkCreateWaylandSurfaceKHR(vulkanContext.instance, &surfaceCreateInfo, nullptr, &vulkanContext.surface);
+            }
         }
 #endif
-
 #if defined(VK_USE_PLATFORM_XCB_KHR)
         if (surface_extension == VK_KHR_XCB_SURFACE_EXTENSION_NAME) {
+            int xcb_screen_idx;
+            const auto xcb_connection = xcb_connect(nullptr, &xcb_screen_idx);
+            const auto xcb_setup = xcb_get_setup(xcb_connection);
+            auto xcb_screen = xcb_setup_roots_iterator(xcb_setup);
+            for (int i = 0; i < xcb_screen_idx; ++i) {
+                xcb_screen_next(&xcb_screen);
+            }
+            const auto xcb_window = xcb_generate_id(xcb_connection);
+            xcb_create_window(
+                xcb_connection,
+                xcb_screen.data->root_depth,
+                xcb_window,
+                xcb_screen.data->root,
+                0, 0,
+                800, 600, 0,
+                XCB_WINDOW_CLASS_INPUT_OUTPUT,
+                xcb_screen.data->root_visual,
+                0, nullptr);
+
             VkXcbSurfaceCreateInfoKHR surfaceCreateInfo = {};
             surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-            surfaceCreateInfo.connection = QX11Info::connection();
-            surfaceCreateInfo.window = static_cast<xcb_window_t>(this->winId());
+            surfaceCreateInfo.connection = xcb_connection;
+            surfaceCreateInfo.window = xcb_window;
             surfaceResult = vkCreateXcbSurfaceKHR(vulkanContext.instance, &surfaceCreateInfo, nullptr, &vulkanContext.surface);
         }
 #endif
@@ -1086,6 +1143,22 @@ void addVariantListItem(QStandardItem* parent, const QVariantMap::const_iterator
     QList<QStandardItem*> item;
     item << new QStandardItem(iterator.key());
     item << new QStandardItem(arrayToStr(iterator.value()));
+    if ((iterator.key() == "pCopySrcLayouts") || (iterator.key() == "pCopyDstLayouts")) {
+        QList<QVariant> list = iterator.value().toList();
+        for (auto i = 0; i < list.size(); i++) {
+            QStandardItem* formatItem = new QStandardItem();
+            formatItem->setText(vulkanResources::imageLayoutString((VkImageLayout)list[i].toInt()));
+            item.first()->appendRow(formatItem);
+        }
+    }
+    parent->appendRow(item);
+}
+
+void addTextItem(QStandardItem* parent, const QString& key, const QString& value)
+{
+    QList<QStandardItem*> item;
+    item << new QStandardItem(key);
+    item << new QStandardItem(value);
     parent->appendRow(item);
 }
 
@@ -1161,6 +1234,14 @@ void addPropertiesRow(QStandardItem* parent, const QVariantMap::const_iterator& 
     if (key == "subgroupSupportedStages") {
         const VkShaderStageFlags flags = iterator.value().toUInt();
         addBitFlagsItem(parent, iterator.key(), flags, vulkanResources::shaderStagesBitString);
+        return;
+    }
+    if ((key == "defaultRobustnessStorageBuffers") || (key  == "defaultRobustnessUniformBuffers") || (key == "defaultRobustnessVertexInputs")) {        
+        addTextItem(parent, iterator.key(), vulkanResources::pipelineRobustnessBufferBehaviorString((VkPipelineRobustnessBufferBehavior)iterator.value().toUInt()));
+        return;
+    }
+    if (key == "defaultRobustnessImages") {
+        addTextItem(parent, iterator.key(), vulkanResources::pipelineRobustnessImageBehaviorString((VkPipelineRobustnessImageBehavior)iterator.value().toUInt()));
         return;
     }
 
@@ -1314,10 +1395,25 @@ void VulkanCapsViewer::displayDeviceProperties(VulkanDeviceInfo *device)
         ui.tabWidgetProperties->setTabEnabled(3, false);
     }
 
+    // Core 1.4
+    models.propertiesCore14.clear();
+    if (!(device->core14Properties.empty())) {
+        ui.tabWidgetProperties->setTabEnabled(4, true);
+        QStandardItem* rootItem = models.propertiesCore14.invisibleRootItem();
+        for (QVariantMap::const_iterator iter = device->core14Properties.begin(); iter != device->core14Properties.end(); ++iter) {
+            addPropertiesRow(rootItem, iter);
+        }
+        ui.treeViewDevicePropertiesCore14->expandAll();
+        ui.treeViewDevicePropertiesCore14->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    }
+    else {
+        ui.tabWidgetProperties->setTabEnabled(4, false);
+    }
+
     // Extensions
     models.propertiesExtensions.clear();
     if (!(device->properties2.empty())) {
-        ui.tabWidgetProperties->setTabEnabled(4, true);
+        ui.tabWidgetProperties->setTabEnabled(5, true);
         QStandardItem* rootItem = models.propertiesExtensions.invisibleRootItem();
         for (auto& extension : device->extensions) {
             bool hasProperties = false;
@@ -1341,7 +1437,7 @@ void VulkanCapsViewer::displayDeviceProperties(VulkanDeviceInfo *device)
         ui.treeViewDevicePropertiesExtensions->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
     }
     else {
-        ui.tabWidgetProperties->setTabEnabled(4, false);
+        ui.tabWidgetProperties->setTabEnabled(5, false);
     }
 }
 
@@ -1439,10 +1535,25 @@ void VulkanCapsViewer::displayDeviceFeatures(VulkanDeviceInfo *device)
         ui.tabWidgetFeatures->setTabEnabled(3, false);
     }
 
+    // Core 1.4
+    models.featuresCore14.clear();
+    if (!(device->core14Features.empty())) {
+        ui.tabWidgetFeatures->setTabEnabled(4, true);
+        QStandardItem* rootItem = models.featuresCore14.invisibleRootItem();
+        for (QVariantMap::const_iterator iter = device->core14Features.begin(); iter != device->core14Features.end(); ++iter) {
+            addVkBool32Item(rootItem, iter);
+        }
+        ui.treeViewDeviceFeaturesCore14->expandAll();
+        ui.treeViewDeviceFeaturesCore14->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    }
+    else {
+        ui.tabWidgetFeatures->setTabEnabled(4, false);
+    }
+
     // Extensions
     models.featuresExtensions.clear();
     if (!(device->features2.empty())) {
-        ui.tabWidgetFeatures->setTabEnabled(4, true);
+        ui.tabWidgetFeatures->setTabEnabled(5, true);
         QStandardItem* rootItem = models.featuresExtensions.invisibleRootItem();
         for (auto& extension : device->extensions) {
             bool hasFeatures = false;
@@ -1470,7 +1581,7 @@ void VulkanCapsViewer::displayDeviceFeatures(VulkanDeviceInfo *device)
         ui.treeViewDeviceFeaturesExtensions->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
     }
     else {
-        ui.tabWidgetFeatures->setTabEnabled(4, false);
+        ui.tabWidgetFeatures->setTabEnabled(5, false);
     }
 
 }
