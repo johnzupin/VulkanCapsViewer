@@ -1,3 +1,40 @@
+vulkancapsviewer (4.01~rc1-1lunarg22.04-1) jammy; urgency=medium
+
+  [ Karen Webb ]
+  * Dynamic window system choice (#233)
+
+  [ Sascha Willems ]
+  * Updated to Vulkan headers 1.4.305
+  * Update headers
+  * Update copyright
+  * Updated to Vulkan headers 1.4.307
+  * Disable MacOS CI builds
+  * Version bump
+  * Remove double reporting of VK_KHR_maintenance3 related values
+
+  [ scuzqy ]
+  * Fix stack frame corruption (#241)
+
+  [ Cristiano ]
+  * Use ABI-specific build directories for Android (#242)
+
+  [ Sascha Willems ]
+  * Updated to Vulkan headers 1.4.311
+  * Update Android target SDK
+
+  [ Richard S. Wright Jr. ]
+  * Build with Qt6 (#239)
+
+  [ Sascha Willems ]
+  * Revert "Build with Qt6 (#239)"
+  * Update Ubuntu runners
+  * Update Ubuntu runners
+  * Fixing Linux CI
+  * Updated to Vulkan headers 1.4.313
+  * Re-enable CI fo Mac (#245)
+
+ -- john <john@odin>  Tue, 29 Apr 2025 11:42:32 -0600
+
 vulkancapsviewer (4.00~rc1-1lunarg22.04-1) jammy; urgency=medium
 
   [ Sascha Willems ]
