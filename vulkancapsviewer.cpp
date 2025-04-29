@@ -2,7 +2,7 @@
 *
 * Vulkan hardware capability viewer
 *
-* Copyright (C) 2016-2024 by Sascha Willems (www.saschawillems.de)
+* Copyright (C) 2016-2025 by Sascha Willems (www.saschawillems.de)
 *
 * This code is free software, you can redistribute it and/or
 * modify it under the terms of the GNU Lesser General Public
@@ -79,7 +79,7 @@ extern "C" void *makeViewMetalCompatible(void* handle);
 
 using std::to_string;
 
-const QString VulkanCapsViewer::version = "4.00";
+const QString VulkanCapsViewer::version = "4.01";
 const QString VulkanCapsViewer::reportVersion = "4.0";
 
 OSInfo getOperatingSystem()
@@ -97,7 +97,7 @@ OSInfo getOperatingSystem()
         RtlGetVersionFN RtlGetVersion = reinterpret_cast<RtlGetVersionFN>(GetProcAddress(hModule, "RtlGetVersion"));
         if (RtlGetVersion) {
             RTL_OSVERSIONINFOW osVersionInfo = { 0 };
-            osVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
+            osVersionInfo.dwOSVersionInfoSize = sizeof(osVersionInfo);
             if (RtlGetVersion(&osVersionInfo) == S_OK) {
                 if (osVersionInfo.dwBuildNumber >= 22000) {
                     osInfo.version = "11";
@@ -355,7 +355,7 @@ void VulkanCapsViewer::slotAbout()
 {
     std::stringstream aboutText;
     aboutText << "<p>Vulkan Hardware Capability Viewer " << version.toStdString() << "<br/><br/>"
-        "Copyright (c) 2016-2024 by <a href='https://www.saschawillems.de'>Sascha Willems</a><br/><br/>"
+        "Copyright (c) 2016-2025 by <a href='https://www.saschawillems.de'>Sascha Willems</a><br/><br/>"
         "This tool is <b>Free Open Source Software</b><br/><br/>"
         "For usage and distribution details refer to the readme<br/><br/>"
         "<a href='https://www.gpuinfo.org'>https://www.gpuinfo.org</a><br><br>"
@@ -741,78 +741,91 @@ bool VulkanCapsViewer::initVulkan()
     vulkanContext.vkGetPhysicalDeviceSurfaceSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceSupportKHR>(vkGetInstanceProcAddr(vulkanContext.instance, "vkGetPhysicalDeviceSurfaceSupportKHR"));
 
     // Create a surface
-    for (auto surface_extension : surfaceExtensionsAvailable) {
-        VkResult surfaceResult = VK_ERROR_INITIALIZATION_FAILED;
+    VkResult surfaceResult = VK_ERROR_INITIALIZATION_FAILED;
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-        if (surface_extension == VK_KHR_WIN32_SURFACE_EXTENSION_NAME) {
-            VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
-            surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-            surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
-            surfaceCreateInfo.hwnd = reinterpret_cast<HWND>(this->winId());
-            surfaceResult = vkCreateWin32SurfaceKHR(vulkanContext.instance, &surfaceCreateInfo, nullptr, &vulkanContext.surface);
-        }
+    if (!vulkanContext.surface &&
+        std::find(surfaceExtensionsAvailable.begin(), surfaceExtensionsAvailable.end(),
+                  VK_KHR_WIN32_SURFACE_EXTENSION_NAME) != std::end(surfaceExtensionsAvailable))
+    {
+        vulkanContext.surfaceExtension = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+
+        VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
+        surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+        surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
+        surfaceCreateInfo.hwnd = reinterpret_cast<HWND>(this->winId());
+        surfaceResult = vkCreateWin32SurfaceKHR(vulkanContext.instance, &surfaceCreateInfo, nullptr, &vulkanContext.surface);
+    }
 #endif
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
-        if (surface_extension == VK_KHR_ANDROID_SURFACE_EXTENSION_NAME) {
+    if (!vulkanContext.surface &&
+        std::find(surfaceExtensionsAvailable.begin(), surfaceExtensionsAvailable.end(),
+                  VK_KHR_ANDROID_SURFACE_EXTENSION_NAME) != std::end(surfaceExtensionsAvailable))
+    {
+        vulkanContext.surfaceExtension = VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
 
-            // Get a native window via JNI
-            // Qt doesn't offer access to this, so we have to do this manually
-            // Note: Purely based on countless hours of trial-and-error, need to check on other devices
-            // todo: cleanup, error checking
+        // Get a native window via JNI
+        // Qt doesn't offer access to this, so we have to do this manually
+        // Note: Purely based on countless hours of trial-and-error, need to check on other devices
+        // todo: cleanup, error checking
 
-            // Get window
-            QAndroidJniObject activity = QtAndroid::androidActivity();
-            QAndroidJniObject window;
-            if (activity.isValid())
+        // Get window
+        QAndroidJniObject activity = QtAndroid::androidActivity();
+        QAndroidJniObject window;
+        if (activity.isValid())
+        {
+            window = activity.callObjectMethod("getWindow", "()Landroid/view/Window;");
+        }
+
+        if (window.isValid())
+        {
+            // Get a surface texture
+            QAndroidJniObject surfaceTexture = QAndroidJniObject("android/graphics/SurfaceTexture", "(I)V", jint(0));
+            qDebug() << surfaceTexture.isValid();
+
+            // Get a surface based on the texture
+            QAndroidJniObject surface("android/view/Surface", "(Landroid/graphics/SurfaceTexture;)V", surfaceTexture.object());
+            qDebug() << surface.isValid();
+
+            if (surfaceTexture.isValid())
             {
-                window = activity.callObjectMethod("getWindow", "()Landroid/view/Window;");
-            }
-
-            if (window.isValid())
-            {
-
-                // Get a surface texture
-                QAndroidJniObject surfaceTexture = QAndroidJniObject("android/graphics/SurfaceTexture", "(I)V", jint(0));
-                qDebug() << surfaceTexture.isValid();
-
-                // Get a surface based on the texture
-                QAndroidJniObject surface("android/view/Surface", "(Landroid/graphics/SurfaceTexture;)V", surfaceTexture.object());
-                qDebug() << surface.isValid();
-
-                if (surfaceTexture.isValid())
-                {
-                    // Create a native window from our surface that can be used to create the Vulkan surface
-                    QAndroidJniEnvironment qjniEnv;
-                    nativeWindow = ANativeWindow_fromSurface(qjniEnv, surface.object());
-                }
-            }
-
-            if (nativeWindow)
-            {
-                VkAndroidSurfaceCreateInfoKHR surfaceCreateInfo = {};
-                surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
-                surfaceCreateInfo.window = nativeWindow;
-                surfaceResult = vkCreateAndroidSurfaceKHR(vulkanContext.instance, &surfaceCreateInfo, NULL, &vulkanContext.surface);
+                // Create a native window from our surface that can be used to create the Vulkan surface
+                QAndroidJniEnvironment qjniEnv;
+                nativeWindow = ANativeWindow_fromSurface(qjniEnv, surface.object());
             }
         }
+
+        if (nativeWindow)
+        {
+            VkAndroidSurfaceCreateInfoKHR surfaceCreateInfo = {};
+            surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
+            surfaceCreateInfo.window = nativeWindow;
+            surfaceResult = vkCreateAndroidSurfaceKHR(vulkanContext.instance, &surfaceCreateInfo, NULL, &vulkanContext.surface);
+        }
+    }
 #endif
 
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
-        if (surface_extension == VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME) {
-            static const wl_registry_listener WAYLAND_LISTENER {
-                .global = [](void *data, wl_registry*, uint32_t name, const char* interface, uint32_t){
-                    if (!strcmp(interface, wl_compositor_interface.name)) {
-                        *static_cast<uint32_t *>(data) = name;
-                    }
-                },
-                .global_remove = [](void*, wl_registry*, uint32_t){
+    if (!vulkanContext.surface &&
+        std::find(surfaceExtensionsAvailable.begin(), surfaceExtensionsAvailable.end(),
+                  VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME) != std::end(surfaceExtensionsAvailable))
+    {
+        vulkanContext.surfaceExtension = VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
 
+        static const wl_registry_listener WAYLAND_LISTENER {
+            .global = [](void *data, wl_registry*, uint32_t name, const char* interface, uint32_t){
+                if (!strcmp(interface, wl_compositor_interface.name)) {
+                    *static_cast<uint32_t *>(data) = name;
                 }
-            };
+            },
+            .global_remove = [](void*, wl_registry*, uint32_t){
 
-            const auto wayland_display = wl_display_connect(nullptr);
+            }
+        };
+
+        const auto wayland_display = wl_display_connect(nullptr);
+        if (wayland_display) {
             const auto wayland_registry = wl_display_get_registry(wayland_display);
             uint32_t wayland_compositor_name = 0;
             wl_registry_add_listener(wayland_registry, &WAYLAND_LISTENER, &wayland_compositor_name);
@@ -831,11 +844,19 @@ bool VulkanCapsViewer::initVulkan()
                 surfaceResult = vkCreateWaylandSurfaceKHR(vulkanContext.instance, &surfaceCreateInfo, nullptr, &vulkanContext.surface);
             }
         }
+    }
 #endif
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-        if (surface_extension == VK_KHR_XCB_SURFACE_EXTENSION_NAME) {
-            int xcb_screen_idx;
-            const auto xcb_connection = xcb_connect(nullptr, &xcb_screen_idx);
+    if (!vulkanContext.surface &&
+        std::find(surfaceExtensionsAvailable.begin(), surfaceExtensionsAvailable.end(),
+                  VK_KHR_XCB_SURFACE_EXTENSION_NAME) != std::end(surfaceExtensionsAvailable))
+    {
+        vulkanContext.surfaceExtension = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
+
+        int xcb_screen_idx;
+        const auto xcb_connection = xcb_connect(nullptr, &xcb_screen_idx);
+
+        if (!xcb_connection_has_error(xcb_connection)) {
             const auto xcb_setup = xcb_get_setup(xcb_connection);
             auto xcb_screen = xcb_setup_roots_iterator(xcb_setup);
             for (int i = 0; i < xcb_screen_idx; ++i) {
@@ -859,27 +880,30 @@ bool VulkanCapsViewer::initVulkan()
             surfaceCreateInfo.window = xcb_window;
             surfaceResult = vkCreateXcbSurfaceKHR(vulkanContext.instance, &surfaceCreateInfo, nullptr, &vulkanContext.surface);
         }
+    }
 #endif
 
 // This works for deskop and iOS devices
 #if defined(VK_USE_PLATFORM_METAL_EXT)
-        if(surface_extension == VK_EXT_METAL_SURFACE_EXTENSION_NAME) {
-            pMetalSurrogate = new QVukanSurrogate;
-            VkMetalSurfaceCreateInfoEXT info = {};
-            info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
-            info.pNext = nullptr;
-            info.pLayer = (void*)makeViewMetalCompatible((void*)pMetalSurrogate->winId());
-            info.flags = 0;
-            surfaceResult = vkCreateMetalSurfaceEXT(vulkanContext.instance, &info, nullptr, &vulkanContext.surface);
-        }
+    if(!vulkanContext.surface &&
+        std::find(surfaceExtensionsAvailable.begin(), surfaceExtensionsAvailable.end(),
+                  VK_EXT_METAL_SURFACE_EXTENSION_NAME) != std::end(surfaceExtensionsAvailable))
+    {
+        vulkanContext.surfaceExtension = VK_EXT_METAL_SURFACE_EXTENSION_NAME;
+
+        pMetalSurrogate = new QVukanSurrogate;
+        VkMetalSurfaceCreateInfoEXT info = {};
+        info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
+        info.pNext = nullptr;
+        info.pLayer = (void*)makeViewMetalCompatible((void*)pMetalSurrogate->winId());
+        info.flags = 0;
+        surfaceResult = vkCreateMetalSurfaceEXT(vulkanContext.instance, &info, nullptr, &vulkanContext.surface);
+    }
 #endif
 
-        if (surfaceResult == VK_SUCCESS) {
-            vulkanContext.surfaceExtension = surface_extension;
-            break;
-        } else {
-            vulkanContext.surface = VK_NULL_HANDLE;
-        }
+    if (surfaceResult != VK_SUCCESS) {
+        vulkanContext.surface = VK_NULL_HANDLE;
+        vulkanContext.surfaceExtension = "" ;
     }
 
     displayInstanceLayers();
@@ -1257,6 +1281,12 @@ void addPropertiesRow(QStandardItem* parent, const QVariantMap::const_iterator& 
 
 void addExtensionPropertiesRow(QList<QStandardItem*> item, Property2 property)
 {
+    if (vulkanResources::shaderStageValueNames.contains(QString::fromStdString(property.name))) {
+        const VkSubgroupFeatureFlags flags = property.value.toUInt();
+        addBitFlagsItem(item[0], QString::fromStdString(property.name), flags, vulkanResources::shaderStagesBitString);
+        return;
+    }
+
     QList<QStandardItem*> propertyItem;
     propertyItem << new QStandardItem(QString::fromStdString(property.name));
 
